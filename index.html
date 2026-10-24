@@ -94,6 +94,12 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border:0;border-radiu
 #tabs{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--hl);background:var(--bg);padding-bottom:env(safe-area-inset-bottom)}
 #tabs button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0;font-size:11px;color:var(--mu)}
 #tabs button.on{color:var(--pr)}#tabs svg{width:20px;height:20px}.mob{display:inline-grid}}
+.add .ob+.ob{margin-top:8px}
+.bk{display:flex;gap:8px;margin-top:10px}
+.bk button{flex:1;font:11px var(--mo);letter-spacing:.08em;text-transform:uppercase;color:var(--mu);padding:8px 0;border:1px solid var(--hl);border-radius:2px;transition:.15s}
+.bk button:hover{color:var(--pr);border-color:var(--pr)}
+.lk{color:var(--pr);text-decoration:underline;text-underline-offset:3px}
+@media(pointer:coarse){.fo{display:none!important}}
 </style>
 </head>
 <body>
@@ -108,6 +114,8 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border:0;border-radiu
 </footer>
 <nav id="tabs"></nav>
 <input type="file" id="picker" accept="audio/*,.mp3,.flac,.wav,.m4a,.ogg,.opus,.aac" multiple hidden>
+<input type="file" id="folder" webkitdirectory multiple hidden>
+<input type="file" id="restore" accept=".json,application/json" hidden>
 <div id="toast" hidden></div>
 <div id="drop" hidden><div><b>Let go to add</b><p class="lbl" style="margin-top:12px">mp3 · flac · wav · m4a · ogg</p></div></div>
 <audio id="audio"></audio>
@@ -115,7 +123,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border:0;border-radiu
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js')}
 const $=id=>document.getElementById(id),audio=$('audio');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const IC={heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/>',plus:'<path d="M5 12h14M12 5v14"/>',search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',play:'<polygon points="7 4 20 12 7 20 7 4"/>',pause:'<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',back:'<polygon points="19 20 9 12 19 4 19 20"/><path d="M5 19V5"/>',fwd:'<polygon points="5 4 15 12 5 20 5 4"/><path d="M19 5v14"/>',shuf:'<path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/>',rep:'<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',up:'<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',disc:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/>',list:'<path d="M3 6h13M3 12h13M3 18h8"/><circle cx="19" cy="17" r="2"/>',vol:'<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/>',pen:'<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>'};
+const IC={folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/>',plus:'<path d="M5 12h14M12 5v14"/>',search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',play:'<polygon points="7 4 20 12 7 20 7 4"/>',pause:'<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',back:'<polygon points="19 20 9 12 19 4 19 20"/><path d="M5 19V5"/>',fwd:'<polygon points="5 4 15 12 5 20 5 4"/><path d="M19 5v14"/>',shuf:'<path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/>',rep:'<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',up:'<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',disc:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/>',list:'<path d="M3 6h13M3 12h13M3 18h8"/><circle cx="19" cy="17" r="2"/>',vol:'<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/>',pen:'<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>'};
 const I=(n,x='')=>`<svg viewBox="0 0 24 24" ${x}>${IC[n]}</svg>`,FILL='style="fill:currentColor;stroke:none"';
 let db,songs=[],pls=[],view={k:'lib',id:0},queue=[],shown=[],cur=null,shuf=0,rep=0,cu=null,q='',sort='new';
 const CU=new Map();
@@ -174,11 +182,38 @@ const tot=l=>{const t=l.reduce((a,s)=>a+(s.dur||0),0),h=Math.floor(t/3600),m=Mat
 const toast=m=>{const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2600)};
 
 // ---------- adding songs ----------
-async function addFiles(fs){fs=Array.from(fs);let n=0,skip=0;toast('Importing…');
- for(const f of fs){if(!/^audio\//.test(f.type)&&!/\.(mp3|flac|wav|m4a|aac|ogg|opus)$/i.test(f.name))continue;
-  const name=f.name.replace(/\.[^.]+$/,'');if(songs.some(s=>s.name==name&&s.blob.size==f.size)){skip++;continue}
-  const t=await readTags(f);await put('songs',{name,blob:f,fav:false,added:Date.now()+n,tagged:1,dur:await dur(f),...t});n++}
- await load();render();toast(n?n+(n==1?' song added':' songs added'):skip?'Already in your library':'No audio files found')}
+async function addFiles(fs){fs=Array.from(fs).filter(f=>/^audio\//.test(f.type)||/\.(mp3|flac|wav|m4a|aac|ogg|opus)$/i.test(f.name));
+ if(!fs.length){toast('No audio files found');return}
+ const have=new Set(songs.map(s=>s.name+'|'+s.blob.size));let n=0,skip=0,bad=0;
+ for(let i=0;i<fs.length;i++){const f=fs[i],name=f.name.replace(/\.[^.]+$/,''),key=name+'|'+f.size;
+  if(have.has(key)){skip++;continue}
+  toast('Importing '+(i+1)+' of '+fs.length+'…');
+  try{const t=await readTags(f);await put('songs',{name,blob:f,fav:false,added:Date.now()+n,tagged:1,dur:await dur(f),...t});have.add(key);n++}catch(e){bad++}}
+ await load();render();
+ toast(n?n+(n==1?' song added':' songs added')+(skip?' · '+skip+' already here':'')+(bad?' · '+bad+' failed (storage full?)':''):skip?'Already in your library':'Could not add those files (storage full?)')}
+// ---------- folders: pick or drop a whole folder ----------
+async function walk(en,out){if(en.isFile){await new Promise(r=>en.file(f=>{out.push(f);r()},r))}
+ else if(en.isDirectory){const rd=en.createReader();for(;;){const b=await new Promise(r=>rd.readEntries(r,()=>r([])));if(!b.length)break;for(const c of b)await walk(c,out)}}}
+async function dropped(dt){const en=Array.from(dt.items||[]).map(i=>i.webkitGetAsEntry&&i.webkitGetAsEntry()).filter(Boolean);
+ if(!en.length)return Array.from(dt.files);const out=[];for(const e of en)await walk(e,out);return out}
+// ---------- backup / restore of favorites + playlists (songs matched by name + size) ----------
+const sk=s=>({name:s.name,size:s.blob.size});
+function backup(){const d={app:'mythological',version:1,exported:new Date().toISOString(),favorites:songs.filter(s=>s.fav).map(sk),playlists:pls.map(l=>({name:l.name,songs:plSongs(l.id).map(sk)}))};
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,1)],{type:'application/json'}));
+ a.download='mythological-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+ toast('Backup saved: '+d.favorites.length+' favorites, '+d.playlists.length+' playlists')}
+async function restore(f){let d;try{d=JSON.parse(await f.text())}catch(e){}
+ if(!d||d.app!=='mythological'||!Array.isArray(d.favorites)||!Array.isArray(d.playlists)){toast('That is not a Mythological backup file');return}
+ const idx=new Map(songs.map(s=>[s.name+'|'+s.blob.size,s]));let fav=0,npl=0,miss=0;
+ for(const x of d.favorites){const s=x&&idx.get(x.name+'|'+x.size);if(!s){miss++;continue}if(!s.fav){s.fav=true;await put('songs',s);fav++}}
+ for(const p of d.playlists){if(!p||!p.name)continue;let l=pls.find(z=>z.name==p.name);if(!l){l={name:p.name,ids:[]};l.id=await put('playlists',l);pls.push(l);npl++}
+  for(const x of p.songs||[]){const s=x&&idx.get(x.name+'|'+x.size);if(!s){miss++;continue}if(!l.ids.includes(s.id))l.ids.push(s.id)}
+  await put('playlists',l)}
+ await load();render();
+ toast('Restored '+fav+' favorites, '+npl+' new playlists'+(miss?' · '+miss+' entries skipped (add those songs first, then restore again)':''))}
+function tools(btn){closeMenu();const p=document.createElement('div');p.className='pop';p.id='pop';
+ p.innerHTML='<button data-a="add">Add music</button><button class="fo" data-a="folder">Import folder</button><button data-a="backup">Back up playlists &amp; favorites</button><button data-a="restore">Restore from backup</button>';
+ document.body.appendChild(p);const r=btn.getBoundingClientRect();p.style.top=Math.max(8,Math.min(r.bottom+4,innerHeight-p.offsetHeight-8))+'px';p.style.left=Math.max(8,Math.min(r.right-224,innerWidth-232))+'px'}
 async function enrich(){const old=songs.filter(s=>!s.tagged);if(!old.length)return;
  for(const s of old){Object.assign(s,await readTags(s.blob),{tagged:1});if(!s.dur)s.dur=await dur(s.blob);await put('songs',s)}
  await load();render();bar()}
@@ -193,17 +228,17 @@ function listHtml(){const fav=view.k=='fav',l=view.k=='pl'?plSongs(view.id):filt
  return l.length?l.map(row).join(''):`<p class="none">${q?'Nothing matches “'+esc(q)+'”.':fav?'No favorites yet. Tap the heart on any song to keep it here.':view.k=='pl'?'This playlist is empty. Open the ⋯ menu on any song and choose a playlist.':'Nothing here.'}</p>`}
 function renderList(){const e=$('lst');if(e)e.innerHTML=listHtml()}
 const PB=`<button class="pb" data-a="playall" aria-label="Play all">${I('play',FILL)}</button>`;
-const EMPTY=`<div class="em"><p class="lbl">Side A · Track 00</p><h1>The room is quiet. <i>Bring a record.</i></h1><p class="t">Your songs stay on this device, played exactly as they were recorded. Nothing is uploaded, nothing is changed.</p><button class="dz" data-a="add" style="background:none;color:inherit"><b>Drop your music here</b><span>or click to choose files — select as many as you like</span><span class="lbl">mp3 · flac · wav · m4a · ogg</span></button></div>`;
+const EMPTY=`<div class="em"><p class="lbl">Side A · Track 00</p><h1>The room is quiet. <i>Bring a record.</i></h1><p class="t">Your songs stay on this device, played exactly as they were recorded. Nothing is uploaded, nothing is changed.</p><button class="dz" data-a="add" style="background:none;color:inherit"><b>Drop your music here</b><span>or click to choose files — select as many as you like</span><span class="lbl">mp3 · flac · wav · m4a · ogg</span></button><p class="t" style="margin-top:20px"><button class="lk fo" data-a="folder">Import a whole folder</button><span class="fo"> · </span><button class="lk" data-a="restore">Restore a backup</button></p></div>`;
 function render(){side();tabs();const v=view;let h;
  if(v.k=='pls')h=hd('Sequences','Playlists',pls.length+(pls.length==1?' playlist':' playlists'),`<button class="ob" data-a="newpl">${I('plus')} New playlist</button>`)+(pls.length?pls.map(l=>{const f=plSongs(l.id)[0];return`<div class="row" data-pl="${l.id}"><img src="${f?cov(f):sleeve('pl'+l.id,l.name)}" alt=""><span class="tt"><b class="sf">${esc(l.name)}</b><small>${l.ids.length} tracks</small></span></div>`}).join(''):'<p class="none">No playlists yet. Make one here, or use the ⋯ menu on any song.</p>');
  else if(v.k=='pl'){const l=pls.find(x=>x.id==v.id);if(!l){view={k:'pls',id:0};return render()}const s=plSongs(l.id);
   h=hd('Playlist',l.name,tot(s),(s.length?PB:'')+`<button class="k" data-a="renpl" aria-label="Rename">${I('pen')}</button><button class="k" data-a="delpl" aria-label="Delete playlist">${I('trash')}</button>`)+`<div id="lst">${listHtml()}</div>`}
  else if(!songs.length)h=EMPTY;
  else{const fav=v.k=='fav',b=fav?songs.filter(s=>s.fav):songs;
-  h=hd(fav?'Kept close':'All recordings',fav?'Favorites':'Library',tot(b),(b.length?PB:'')+`<button class="k mob" data-a="add" aria-label="Add music">${I('up')}</button>`)+`<div class="tl"><label class="sr">${I('search')}<input id="q" value="${esc(q)}" placeholder="Search title, artist, album" aria-label="Search"></label><select id="so" aria-label="Sort">${[['new','Recently added'],['az','Title A–Z'],['za','Title Z–A']].map(x=>`<option value="${x[0]}"${sort==x[0]?' selected':''}>${x[1]}</option>`).join('')}</select></div><div id="lst">${listHtml()}</div>`}
+  h=hd(fav?'Kept close':'All recordings',fav?'Favorites':'Library',tot(b),(b.length?PB:'')+`<button class="k mob" data-a="tools" aria-label="Add music and backup">${I('up')}</button>`)+`<div class="tl"><label class="sr">${I('search')}<input id="q" value="${esc(q)}" placeholder="Search title, artist, album" aria-label="Search"></label><select id="so" aria-label="Sort">${[['new','Recently added'],['az','Title A–Z'],['za','Title Z–A']].map(x=>`<option value="${x[0]}"${sort==x[0]?' selected':''}>${x[1]}</option>`).join('')}</select></div><div id="lst">${listHtml()}</div>`}
  $('wrap').innerHTML=h}
 function side(){const a=k=>view.k==k?' on':'';
- $('side').innerHTML=`<div class="brand"><p class="logo">Mythological</p><p class="lbl">Private listening room</p></div><nav><button class="nv${a('lib')}" data-v="lib">${I('disc')} Library<span>${songs.length}</span></button><button class="nv${a('fav')}" data-v="fav">${I('heart')} Favorites<span>${songs.filter(s=>s.fav).length}</span></button></nav><div class="ph"><button class="lbl" data-v="pls">Playlists</button><button class="k" data-a="newpl" aria-label="New playlist">${I('plus')}</button></div><nav class="pl">${pls.length?pls.map(l=>`<button class="nv${view.k=='pl'&&view.id==l.id?' on':''}" data-v="pl" data-id="${l.id}"><span class="sf">${esc(l.name)}</span><span>${l.ids.length}</span></button>`).join(''):'<p class="mu">None yet.</p>'}</nav><div class="add"><button class="ob" data-a="add">${I('up')} Add music</button></div>`}
+ $('side').innerHTML=`<div class="brand"><p class="logo">Mythological</p><p class="lbl">Private listening room</p></div><nav><button class="nv${a('lib')}" data-v="lib">${I('disc')} Library<span>${songs.length}</span></button><button class="nv${a('fav')}" data-v="fav">${I('heart')} Favorites<span>${songs.filter(s=>s.fav).length}</span></button></nav><div class="ph"><button class="lbl" data-v="pls">Playlists</button><button class="k" data-a="newpl" aria-label="New playlist">${I('plus')}</button></div><nav class="pl">${pls.length?pls.map(l=>`<button class="nv${view.k=='pl'&&view.id==l.id?' on':''}" data-v="pl" data-id="${l.id}"><span class="sf">${esc(l.name)}</span><span>${l.ids.length}</span></button>`).join(''):'<p class="mu">None yet.</p>'}</nav><div class="add"><button class="ob" data-a="add">${I('up')} Add music</button><button class="ob fo" data-a="folder">${I('folder')} Import folder</button><div class="bk"><button data-a="backup">Back up</button><button data-a="restore">Restore</button></div></div>`}
 function tabs(){const on=k=>view.k==k||(k=='pls'&&view.k=='pl')?' class="on"':'';
  $('tabs').innerHTML=[['lib','Library','disc'],['fav','Favorites','heart'],['pls','Playlists','list']].map(x=>`<button${on(x[0])} data-v="${x[0]}">${I(x[2])}${x[1]}</button>`).join('')}
 
@@ -224,7 +259,11 @@ document.addEventListener('click',async e=>{const t=e.target;
  if(!t.closest('.pop'))closeMenu();
  const v=t.closest('[data-v]');if(v){view={k:v.dataset.v,id:+v.dataset.id||0};q='';render();$('main').scrollTop=0;return}
  const a=t.closest('[data-a]'),r=t.closest('.row'),s=r&&r.dataset.id?songs.find(x=>x.id==+r.dataset.id):null,act=a&&a.dataset.a;
- if(act=='add')return $('picker').click();
+ if(act=='add'){closeMenu();return $('picker').click()}
+ if(act=='folder'){closeMenu();return $('folder').click()}
+ if(act=='backup'){closeMenu();return backup()}
+ if(act=='restore'){closeMenu();return $('restore').click()}
+ if(act=='tools'){e.stopPropagation();tools(a);return}
  if(act=='newpl'){const n=prompt('Playlist name');if(n&&n.trim()){const id=await put('playlists',{name:n.trim(),ids:[]});await load();view={k:'pl',id};render()}return}
  if(act=='renpl'){const l=pls.find(x=>x.id==view.id),n=prompt('Rename playlist',l.name);if(n&&n.trim()){l.name=n.trim();await put('playlists',l);await load();render()}return}
  if(act=='delpl'){const l=pls.find(x=>x.id==view.id);if(confirm('Delete "'+l.name+'"? The songs stay in your library.')){await del('playlists',l.id);await load();view={k:'pls',id:0};render()}return}
@@ -236,11 +275,13 @@ document.addEventListener('click',async e=>{const t=e.target;
 $('wrap').addEventListener('input',e=>{if(e.target.id=='q'){q=e.target.value;renderList()}});
 $('wrap').addEventListener('change',e=>{if(e.target.id=='so'){sort=e.target.value;renderList()}});
 $('picker').onchange=e=>{const f=Array.from(e.target.files);e.target.value='';addFiles(f)};
+$('folder').onchange=e=>{const f=Array.from(e.target.files);e.target.value='';addFiles(f)};
+$('restore').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)restore(f)};
 let dd=0;const hasF=e=>e.dataTransfer&&Array.from(e.dataTransfer.types).includes('Files');
 addEventListener('dragenter',e=>{if(!hasF(e))return;e.preventDefault();dd++;$('drop').hidden=false});
 addEventListener('dragover',e=>{if(hasF(e))e.preventDefault()});
 addEventListener('dragleave',()=>{dd=Math.max(0,dd-1);if(!dd)$('drop').hidden=true});
-addEventListener('drop',e=>{if(!hasF(e))return;e.preventDefault();dd=0;$('drop').hidden=true;addFiles(Array.from(e.dataTransfer.files))});
+addEventListener('drop',e=>{if(!hasF(e))return;e.preventDefault();dd=0;$('drop').hidden=true;dropped(e.dataTransfer).then(addFiles)});
 addEventListener('keydown',e=>{if(e.code=='Space'&&!/INPUT|SELECT|TEXTAREA|BUTTON/.test(e.target.tagName)){e.preventDefault();$('play').click()}});
 
 // ---------- playback ----------
