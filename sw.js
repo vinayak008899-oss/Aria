@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mythological-v3';
+const CACHE_NAME = 'mythological-v4';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', event => {
@@ -16,6 +16,8 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  // Never touch other sites (Jamendo API and audio streams go straight to the network, nothing is cached)
+  if (new URL(event.request.url).origin !== self.location.origin) return;
 
   // Pages: network first, fall back to cache when offline
   if (event.request.mode === 'navigate') {
